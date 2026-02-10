@@ -54,10 +54,13 @@
                 <h4>Esplora</h4>
                 <div class="shortcut-list">
                     <button id="show-popular" class="nav-btn-side active">
-                        <i class="fas fa-fire"></i> Popolari
+                        <i class="fas fa-fire"></i> Film Popolari
+                    </button>
+                    <button id="show-popular-tv" class="nav-btn-side">
+                        <i class="fas fa-tv"></i> Serie TV Popolari
                     </button>
                     <button id="show-top-rated" class="nav-btn-side">
-                        <i class="fas fa-star"></i> Più Votati
+                        <i class="fas fa-star"></i> Più Votati (Film)
                     </button>
                     <button id="show-upcoming" class="nav-btn-side">
                         <i class="fas fa-calendar-alt"></i> Prossimamente
@@ -67,7 +70,16 @@
 
             <div class="search-container-side">
                 <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Cerca un film...">
+                <input type="text" id="search-input" placeholder="Cerca film o serie TV...">
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Tipo di Contenuto</h4>
+                <select id="content-type" class="sort-select">
+                    <option value="multi">Tutto</option>
+                    <option value="movie">Solo Film</option>
+                    <option value="tv">Solo Serie TV</option>
+                </select>
             </div>
 
             <div class="sidebar-section">

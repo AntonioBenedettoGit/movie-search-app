@@ -1,7 +1,8 @@
 const API_KEY = '674505286e9aebf5ddf68cc587523283';
 const BASE_URL = 'https://api.themoviedb.org/3';
-const IMG_URL = 'https://image.tmdb.org/t/p/'; // Rimosso w500 per gestire dimensioni dinamiche
+const IMG_URL = 'https://image.tmdb.org/t/p/'; 
 const BACKDROP_URL = 'https://image.tmdb.org/t/p/original';
+const MAX_YEAR = 2026;
 
 // DOM Elements
 const movieGrid = document.getElementById('movie-grid');
@@ -20,10 +21,12 @@ const showWatchlist = document.getElementById('show-watchlist');
 const showHomeMobile = document.getElementById('show-home-mobile');
 const showWatchlistMobile = document.getElementById('show-watchlist-mobile');
 const showPopular = document.getElementById('show-popular');
+const showPopularTv = document.getElementById('show-popular-tv');
 const showTopRated = document.getElementById('show-top-rated');
 const showUpcoming = document.getElementById('show-upcoming');
 const genreContainer = document.getElementById('genre-container');
 const sortBySelect = document.getElementById('sort-by');
+const contentTypeSelect = document.getElementById('content-type');
 const scrollSentinel = document.getElementById('scroll-sentinel');
 
 // State
@@ -34,6 +37,7 @@ let currentPage = 1;
 let currentUrl = '';
 let isLoading = false;
 let selectedGenres = [];
+let currentMediaType = 'movie'; // 'movie', 'tv', o 'multi'
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initInfiniteScroll() {
     const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && !isLoading && currentView === 'home') {
+        if (entries[0].isIntersecting && !isLoading && (currentView === 'home' || currentView === 'search')) {
             loadNextPage();
         }
     }, { threshold: 1.0 });
@@ -59,13 +63,14 @@ function initInfiniteScroll() {
 function checkDeepLinking() {
     const params = new URLSearchParams(window.location.search);
     const movieId = params.get('id');
+    const mediaType = params.get('type') || 'movie';
     if (movieId) {
-        fetchMovieDetails(movieId);
+        fetchMovieDetails(movieId, mediaType);
     }
 }
 
-function updateUrlParams(movieId) {
-    const newUrl = movieId ? `?id=${movieId}` : window.location.pathname;
+function updateUrlParams(id, type) {
+    const newUrl = id ? `?id=${id}&type=${type}` : window.location.pathname;
     window.history.pushState({ path: newUrl }, '', newUrl);
 }
 
@@ -73,7 +78,6 @@ async function loadNextPage() {
     currentPage++;
     isLoading = true;
     
-    // Aggiungi o aggiorna il parametro page nell'URL
     const urlWithPage = new URL(currentUrl);
     urlWithPage.searchParams.set('page', currentPage);
     
@@ -117,11 +121,12 @@ function initSidebar() {
     });
 
     const updateActiveShortcut = (btn) => {
-        [showPopular, showTopRated, showUpcoming].forEach(b => b.classList.remove('active'));
+        [showPopular, showPopularTv, showTopRated, showUpcoming].forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     };
 
     showPopular.addEventListener('click', () => {
+        currentMediaType = 'movie';
         currentUrl = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=it-IT`;
         sectionTitle.innerText = 'Film Popolari';
         fetchMovies(currentUrl);
@@ -129,15 +134,26 @@ function initSidebar() {
         closeMenu();
     });
 
+    showPopularTv.addEventListener('click', () => {
+        currentMediaType = 'tv';
+        currentUrl = `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=it-IT`;
+        sectionTitle.innerText = 'Serie TV Popolari';
+        fetchMovies(currentUrl);
+        updateActiveShortcut(showPopularTv);
+        closeMenu();
+    });
+
     showTopRated.addEventListener('click', () => {
+        currentMediaType = 'movie';
         currentUrl = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=it-IT`;
-        sectionTitle.innerText = 'I Più Votati';
+        sectionTitle.innerText = 'I Più Votati (Film)';
         fetchMovies(currentUrl);
         updateActiveShortcut(showTopRated);
         closeMenu();
     });
 
     showUpcoming.addEventListener('click', () => {
+        currentMediaType = 'movie';
         currentUrl = `${BASE_URL}/movie/upcoming?api_key=${API_KEY}&language=it-IT`;
         sectionTitle.innerText = 'Prossimamente al Cinema';
         fetchMovies(currentUrl);
@@ -149,14 +165,29 @@ function initSidebar() {
         currentPage = 1;
         applyFilters();
     });
+
+    contentTypeSelect.addEventListener('change', (e) => {
+        currentMediaType = e.target.value;
+        currentPage = 1;
+        applyFilters();
+    });
 }
 
 function applyFilters() {
     const sort = sortBySelect.value;
     const genres = selectedGenres.join(',');
+    const type = currentMediaType === 'multi' ? 'movie' : currentMediaType; // discover non supporta multi
     
-    currentUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=it-IT&sort_by=${sort}&with_genres=${genres}`;
-    sectionTitle.innerText = selectedGenres.length > 0 ? 'Risultati filtrati' : 'Film Popolari';
+    currentUrl = `${BASE_URL}/discover/${type}?api_key=${API_KEY}&language=it-IT&sort_by=${sort}&with_genres=${genres}`;
+    
+    // Aggiungiamo il filtro per l'anno massimo se richiesto
+    if (type === 'movie') {
+        currentUrl += `&primary_release_date.lte=${MAX_YEAR}-12-31`;
+    } else if (type === 'tv') {
+        currentUrl += `&first_air_date.lte=${MAX_YEAR}-12-31`;
+    }
+
+    sectionTitle.innerText = selectedGenres.length > 0 ? 'Risultati filtrati' : (currentMediaType === 'tv' ? 'Serie TV Popolari' : 'Film Popolari');
     fetchMovies(currentUrl);
 }
 
@@ -164,9 +195,21 @@ function applyFilters() {
 
 async function fetchGenres() {
     try {
-        const res = await fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=it-IT`);
-        const data = await res.json();
-        displayGenres(data.genres);
+        const resMovie = await fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=it-IT`);
+        const dataMovie = await resMovie.json();
+        
+        const resTv = await fetch(`${BASE_URL}/genre/tv/list?api_key=${API_KEY}&language=it-IT`);
+        const dataTv = await resTv.json();
+        
+        // Uniamo i generi evitando duplicati
+        const allGenres = [...dataMovie.genres];
+        dataTv.genres.forEach(tvG => {
+            if (!allGenres.find(g => g.id === tvG.id)) {
+                allGenres.push(tvG);
+            }
+        });
+
+        displayGenres(allGenres);
     } catch (error) {
         console.error('Errore fetch generi:', error);
     }
@@ -218,12 +261,27 @@ async function fetchMovies(url, append = false) {
 
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-            displayMovies(data.results, append);
+            // Filtro per tipo (escludiamo persone) e anno (massimo 2026)
+            const filteredResults = data.results.filter(item => {
+                // Escludiamo i risultati che sono persone (possono apparire in multi-search)
+                if (item.media_type === 'person') return false;
+
+                const dateStr = item.release_date || item.first_air_date;
+                if (!dateStr) return true; // Se non c'è data, lo mostriamo (es. titoli in produzione senza data)
+                const year = parseInt(dateStr.split('-')[0]);
+                return year <= MAX_YEAR;
+            });
+
+            if (filteredResults.length > 0) {
+                displayMovies(filteredResults, append);
+            } else if (!append) {
+                movieGrid.innerHTML = `<p class="error-msg">Nessun risultato trovato entro l'anno ${MAX_YEAR}.</p>`;
+            }
         } else if (!append) {
-            movieGrid.innerHTML = '<p class="error-msg">Nessun film trovato.</p>';
+            movieGrid.innerHTML = '<p class="error-msg">Nessun risultato trovato.</p>';
         }
     } catch (error) {
-        console.error('Errore nel fetch dei film:', error);
+        console.error('Errore nel fetch dei dati:', error);
         if (!append) movieGrid.innerHTML = '<p class="error-msg">Errore di connessione.</p>';
     }
 }
@@ -237,12 +295,13 @@ function showSkeletons() {
     }
 }
 
-async function fetchMovieDetails(id) {
+async function fetchMovieDetails(id, mediaType = 'movie') {
     try {
-        const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits,videos`);
+        const res = await fetch(`${BASE_URL}/${mediaType}/${id}?api_key=${API_KEY}&language=it-IT&append_to_response=credits,videos`);
         const data = await res.json();
+        data.media_type = mediaType; // Assicuriamoci che il tipo sia presente
         showModal(data);
-        updateUrlParams(id);
+        updateUrlParams(id, mediaType);
     } catch (error) {
         console.error('Errore nel fetch dei dettagli:', error);
     }
@@ -254,10 +313,14 @@ function displayMovies(movies, append = false) {
     if (!append) movieGrid.innerHTML = '';
     
     movies.forEach(movie => {
-        const { id, title, poster_path, vote_average, release_date } = movie;
-        const year = release_date ? release_date.split('-')[0] : 'N/A';
+        const { id, title, name, poster_path, vote_average, release_date, first_air_date, media_type } = movie;
         
-        // Immagini Responsive: w342 per mobile, w500 per desktop
+        // Gestione differenze tra Film e Serie TV
+        const displayTitle = title || name;
+        const dateStr = release_date || first_air_date;
+        const year = dateStr ? dateStr.split('-')[0] : 'N/A';
+        const type = media_type || (title ? 'movie' : 'tv');
+        
         const posterBase = IMG_URL;
         const poster = poster_path 
             ? `${posterBase}w500${poster_path}` 
@@ -265,26 +328,27 @@ function displayMovies(movies, append = false) {
 
         const movieEl = document.createElement('div');
         movieEl.classList.add('movie-card');
-        movieEl.setAttribute('tabindex', '0'); // Accessibilità: navigabile da tastiera
+        movieEl.setAttribute('tabindex', '0');
         movieEl.innerHTML = `
             <div class="movie-poster-container">
                 <img src="${poster}" 
                      srcset="${poster_path ? `${posterBase}w342${poster_path} 342w, ${posterBase}w500${poster_path} 500w` : ''}"
                      sizes="(max-width: 600px) 342px, 500px"
-                     alt="${title}" 
+                     alt="${displayTitle}" 
                      class="movie-poster"
                      loading="lazy">
+                <div class="media-type-badge">${type === 'tv' ? 'Serie TV' : 'Film'}</div>
             </div>
             <div class="movie-info">
-                <h3 class="movie-title">${title}</h3>
+                <h3 class="movie-title">${displayTitle}</h3>
                 <div class="movie-meta">
                     <span class="year">${year}</span>
-                    <span class="rating"><i class="fas fa-star"></i> ${vote_average.toFixed(1)}</span>
+                    <span class="rating"><i class="fas fa-star"></i> ${vote_average ? vote_average.toFixed(1) : 'N/A'}</span>
                 </div>
             </div>
         `;
         
-        const openDetails = () => fetchMovieDetails(id);
+        const openDetails = () => fetchMovieDetails(id, type);
         movieEl.addEventListener('click', openDetails);
         movieEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') openDetails(); });
         
@@ -292,29 +356,50 @@ function displayMovies(movies, append = false) {
     });
 }
 
-function showModal(movie) {
-    const { id, title, overview, release_date, vote_average, runtime, genres, poster_path, backdrop_path, credits, videos } = movie;
+function showModal(item) {
+    const { 
+        id, title, name, overview, release_date, first_air_date, 
+        vote_average, runtime, episode_run_time, genres, 
+        poster_path, backdrop_path, credits, videos, media_type,
+        number_of_seasons, number_of_episodes
+    } = item;
     
-    const year = release_date ? release_date.split('-')[0] : 'N/A';
+    const displayTitle = title || name;
+    const dateStr = release_date || first_air_date;
+    const year = dateStr ? dateStr.split('-')[0] : 'N/A';
     const poster = poster_path ? `${IMG_URL}w500${poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster';
     const backdrop = backdrop_path ? BACKDROP_URL + backdrop_path : '';
     const genresList = genres.map(g => g.name).join(', ');
     const trailer = videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+    const type = media_type || (title ? 'movie' : 'tv');
     
+    // Gestione durata
+    let durationInfo = '';
+    if (type === 'movie') {
+        durationInfo = `<span><i class="far fa-clock"></i> ${runtime} min</span>`;
+    } else {
+        const runtimeTv = episode_run_time && episode_run_time.length > 0 ? episode_run_time[0] : 'N/A';
+        durationInfo = `
+            <span><i class="fas fa-layer-group"></i> ${number_of_seasons} Stagioni</span>
+            <span><i class="far fa-clock"></i> ${runtimeTv} min/ep</span>
+        `;
+    }
+
     const isInWatchlist = watchlist.some(m => m.id === id);
 
     modalBody.innerHTML = `
         <div class="modal-header">
-            ${backdrop ? `<img src="${backdrop}" alt="${title}" class="backdrop-img">` : ''}
+            ${backdrop ? `<img src="${backdrop}" alt="${displayTitle}" class="backdrop-img">` : ''}
         </div>
         <div class="modal-details">
-            <img src="${poster}" alt="${title}" class="modal-poster">
+            <img src="${poster}" alt="${displayTitle}" class="modal-poster">
             <div class="modal-info">
-                <h2 class="modal-title">${title}</h2>
+                <div class="modal-type-label">${type === 'tv' ? 'Serie TV' : 'Film'}</div>
+                <h2 class="modal-title">${displayTitle}</h2>
                 <div class="modal-stats">
                     <span><i class="far fa-calendar"></i> ${year}</span>
-                    <span><i class="far fa-clock"></i> ${runtime} min</span>
-                    <span class="rating"><i class="fas fa-star"></i> ${vote_average.toFixed(1)}</span>
+                    ${durationInfo}
+                    <span class="rating"><i class="fas fa-star"></i> ${vote_average ? vote_average.toFixed(1) : 'N/A'}</span>
                 </div>
                 <p class="modal-genres"><strong>Generi:</strong> ${genresList}</p>
                 <div class="modal-overview">
@@ -333,7 +418,7 @@ function showModal(movie) {
                     <div class="modal-trailer">
                         <h3>Trailer Ufficiale</h3>
                         <div class="video-container">
-                            <iframe src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen title="Trailer di ${title}"></iframe>
+                            <iframe src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen title="Trailer di ${displayTitle}"></iframe>
                         </div>
                     </div>
                 ` : ''}
@@ -353,17 +438,14 @@ function showModal(movie) {
         </div>
     `;
 
-    window.fetchMovieDetails = fetchMovieDetails;
-
     movieModal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 
-    // Focus trap per accessibilità
     const closeBtn = movieModal.querySelector('.close-modal');
     closeBtn.focus();
 
     document.getElementById('watchlist-toggle-btn').onclick = function() {
-        toggleWatchlist(movie);
+        toggleWatchlist(item);
         const icon = this.querySelector('i');
         const text = this.querySelector('span');
         
@@ -383,17 +465,20 @@ function showModal(movie) {
 
 // --- WATCHLIST LOGIC ---
 
-function toggleWatchlist(movie) {
-    const index = watchlist.findIndex(m => m.id === movie.id);
+function toggleWatchlist(item) {
+    const index = watchlist.findIndex(m => m.id === item.id);
     if (index > -1) {
         watchlist.splice(index, 1);
     } else {
         watchlist.push({
-            id: movie.id,
-            title: movie.title,
-            poster_path: movie.poster_path,
-            vote_average: movie.vote_average,
-            release_date: movie.release_date
+            id: item.id,
+            title: item.title || item.name,
+            name: item.name,
+            poster_path: item.poster_path,
+            vote_average: item.vote_average,
+            release_date: item.release_date,
+            first_air_date: item.first_air_date,
+            media_type: item.media_type || (item.title ? 'movie' : 'tv')
         });
     }
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
@@ -411,7 +496,7 @@ function displayWatchlist() {
     if (watchlist.length > 0) {
         displayMovies(watchlist);
     } else {
-        movieGrid.innerHTML = '<p class="error-msg">La tua watchlist è vuota. Aggiungi dei film!</p>';
+        movieGrid.innerHTML = '<p class="error-msg">La tua watchlist è vuota. Aggiungi dei film o serie TV!</p>';
     }
 }
 
@@ -423,7 +508,7 @@ searchInput.oninput = (e) => {
     
     if (query.length > 2) {
         searchTimer = setTimeout(() => {
-            currentView = 'home';
+            currentView = 'search';
             sectionTitle.innerText = `Risultati per: "${query}"`;
             
             showWatchlist.classList.remove('active');
@@ -431,7 +516,8 @@ searchInput.oninput = (e) => {
             showWatchlistMobile.classList.remove('active');
             showHomeMobile.classList.add('active');
             
-            currentUrl = `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}&language=it-IT`;
+            // Usiamo multi search per includere tutto
+            currentUrl = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}&language=it-IT`;
             fetchMovies(currentUrl);
         }, 500); 
     } else if (query.length === 0) {
@@ -441,6 +527,7 @@ searchInput.oninput = (e) => {
 
 showHome.onclick = () => {
     currentView = 'home';
+    currentMediaType = 'movie';
     sectionTitle.innerText = 'Film Popolari';
     
     showHome.classList.add('active');
@@ -457,7 +544,7 @@ showWatchlist.onclick = displayWatchlist;
 closeModal.onclick = () => {
     movieModal.style.display = 'none';
     document.body.style.overflow = 'auto';
-    updateUrlParams(null); // Rimuovi ID dall'URL
+    updateUrlParams(null);
 };
 
 window.onclick = (e) => {
