@@ -1,42 +1,50 @@
 # MovieSearch | Portfolio Project
 
-Un'applicazione web moderna e performante per la ricerca di film, sviluppata interamente in JavaScript vanilla. Il progetto mette in mostra competenze di manipolazione del DOM, integrazione di API RESTful e design responsive, seguendo un approccio mobile-first.
+Un'applicazione web moderna e performante per la ricerca di film e serie TV, sviluppata interamente in JavaScript vanilla. Il progetto mette in mostra competenze avanzate di manipolazione del DOM, integrazione di API RESTful e design responsive, seguendo un approccio mobile-first e orientato all'esperienza utente.
 
 ## Caratteristiche Principali
 
-- **Ricerca Avanzata**: Integrazione con l'API di TheMovieDB (TMDB) con sistema di debouncing per ottimizzare le chiamate di rete.
-- **Infinite Scroll**: Caricamento dinamico dei contenuti tramite Intersection Observer API per un'esperienza di navigazione fluida.
-- **Filtraggio Dinamico**: Sistema di filtri combinati per genere e ordinamento (popolarità, voto, data di rilascio).
-- **Esperienza Utente Ottimizzata**: Skeleton screens durante il caricamento e micro-interazioni fluide per un feedback immediato.
-- **Watchlist Persistente**: Gestione dei preferiti tramite LocalStorage per mantenere i dati tra le sessioni.
-- **Design Responsive & Dark Mode**: Interfaccia adattiva ottimizzata per ogni dispositivo, con supporto nativo al cambio tema.
-- **Deep Linking**: Supporto alla navigazione diretta tramite parametri URL per la condivisione di titoli specifici.
+- **Ricerca Multi-Contenuto**: Integrazione completa con l'API di TheMovieDB (TMDB) per la ricerca simultanea di Film e Serie TV (Multi-Search).
+- **Filtraggio Temporale Rigoroso**: Sistema di controllo che limita la visualizzazione ai titoli rilasciati fino all'anno 2026, escludendo automaticamente le produzioni future non ancora disponibili.
+- **Infinite Scroll**: Caricamento dinamico e asincrono dei contenuti tramite Intersection Observer API per una navigazione senza interruzioni.
+- **Filtraggio Dinamico e Categorie**: 
+    - Navigazione dedicata per Serie TV e Film Popolari.
+    - Sistema di filtri combinati per genere e ordinamento (popolarità, voto, data di rilascio).
+- **Esperienza Utente (UX)**: 
+    - Skeleton screens durante il caricamento per ridurre la percezione dell'attesa.
+    - Trailer ufficiali integrati direttamente nei dettagli del titolo.
+    - Micro-interazioni fluide e feedback visivi immediati.
+- **Watchlist Universale**: Gestione persistente dei preferiti (Film e Serie TV) tramite LocalStorage.
+- **Design Responsive & Dark Mode**: Interfaccia adattiva ottimizzata per mobile, tablet e desktop, con supporto nativo al cambio tema (Light/Dark).
+- **Deep Linking**: Supporto alla navigazione diretta tramite parametri URL (`id` e `type`) per la condivisione di titoli specifici.
 
 ## Tecnologie Utilizzate
 
-- **Frontend**: HTML5, CSS3 (Custom Properties, Flexbox, Grid)
-- **Scripting**: JavaScript ES6+ (Async/Await, Fetch API, DOM manipulation)
-- **API**: TheMovieDB REST API
-- **Tooling**: Font Awesome per l'iconografia, Google Fonts per la tipografia
+- **Frontend**: HTML5 (Semantico), CSS3 (Custom Properties, Flexbox, Grid, Animations)
+- **Scripting**: JavaScript ES6+ (Async/Await, Fetch API, Event Delegation, Intersection Observer)
+- **API**: TheMovieDB (TMDB) REST API
+- **Iconografia**: Font Awesome 6.0
 
 ## Requisiti e Installazione
 
-Per eseguire il progetto in locale:
+Il progetto è pronto per l'uso e non richiede build tools.
 
-1. Clonare la repository:
+1. **Clonare la repository**:
    ```bash
    git clone https://github.com/AntonioBenedettoGit/movie-search-app.git
    ```
-2. Aprire il file `index.html` in un browser o utilizzare un server locale (es. Live Server).
+2. **Esecuzione**:
+   Aprire `index.html` nel browser o utilizzare un server locale (consigliato: Live Server per VS Code).
 
 ## Note Tecniche
 
-Particolare attenzione è stata dedicata a:
+- **Performance**: Ottimizzazione del caricamento delle immagini tramite attributi `srcset` e `sizes` per servire risoluzioni adeguate al dispositivo.
+- **Accessibilità (A11y)**: Navigazione da tastiera migliorata, attributi ARIA e gestione del focus (focus trap) all'interno dei componenti modali.
+- **Sostenibilità**: Nessuna dipendenza esterna o framework pesante, garantendo tempi di caricamento minimi e massima compatibilità.
 
-- **Performance**: Ottimizzazione del caricamento delle immagini tramite attributi `srcset` e `sizes`.
-- **Accessibilità**: Navigazione da tastiera migliorata e gestione del focus all'interno dei componenti modali.
-- **Clean Code**: Architettura modulare delle funzioni JavaScript per facilitare la manutenibilità.
+## Autore
 
-## Licenza
+**Antonio Benedetto** - [Profilo GitHub](https://github.com/AntonioBenedettoGit)
 
-Questo progetto è distribuito sotto licenza MIT. Consulta il file `LICENSE` per ulteriori dettagli.
+---
+*Dati forniti da [The Movie Database (TMDB)](https://www.themoviedb.org/).*
