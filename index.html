@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieSearch | Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome per le icone -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dark-theme">
+    <header class="navbar">
+        <div class="container">
+            <div class="nav-left">
+                <button id="menu-toggle" class="menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <i class="fas fa-film"></i>
+                    <span>MOVIE<span>SEARCH</span></span>
+                </div>
+            </div>
+            
+            <nav class="nav-links">
+                <button id="show-home" class="nav-btn active">Home</button>
+                <button id="show-watchlist" class="nav-btn">Watchlist</button>
+            </nav>
+
+            <div class="nav-actions">
+                <button id="theme-toggle" class="theme-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Side Menu (Sidebar) -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Filtri & Ricerca</h3>
+            <button id="close-sidebar" class="close-sidebar">&times;</button>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="sidebar-nav-mobile">
+                <button id="show-home-mobile" class="nav-btn-side">Home</button>
+                <button id="show-watchlist-mobile" class="nav-btn-side">Watchlist</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Esplora</h4>
+                <div class="shortcut-list">
+                    <button id="show-popular" class="nav-btn-side active">
+                        <i class="fas fa-fire"></i> Popolari
+                    </button>
+                    <button id="show-top-rated" class="nav-btn-side">
+                        <i class="fas fa-star"></i> Più Votati
+                    </button>
+                    <button id="show-upcoming" class="nav-btn-side">
+                        <i class="fas fa-calendar-alt"></i> Prossimamente
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-container-side">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Cerca un film...">
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Ordina per</h4>
+                <select id="sort-by" class="sort-select">
+                    <option value="popularity.desc">Più Popolari</option>
+                    <option value="vote_average.desc">Voto più alto</option>
+                    <option value="primary_release_date.desc">Più Recenti</option>
+                    <option value="revenue.desc">Miglior Incasso</option>
+                </select>
+            </div>
+
+            <div class="sidebar-section">
+                <h4>Generi</h4>
+                <div id="genre-container" class="genre-list-side">
+                    <!-- Generi popolati da JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <main class="container">
+        <!-- Sezione Risultati / Home -->
+        <section id="movie-section">
+            <h2 id="section-title">Film Popolari</h2>
+            <div id="movie-grid" class="movie-grid">
+                <!-- I film verranno inseriti qui da JavaScript -->
+                <div class="loader"></div>
+            </div>
+            <div id="scroll-sentinel" style="height: 20px;"></div>
+        </section>
+    </main>
+
+    <!-- Modal per i Dettagli del Film -->
+    <div id="movie-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div id="modal-body">
+                <!-- Contenuto dinamico del modal -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 MovieSearch Portfolio Project. Dati forniti da <a href="https://www.themoviedb.org/" target="_blank">TMDB</a>.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
